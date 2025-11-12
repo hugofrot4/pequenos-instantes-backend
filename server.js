@@ -88,6 +88,38 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
     });
 });
 
+app.delete('/api/photos/:id', (req, res) => {
+  const { id } = req.params;
+
+  const sqlFind = "SELECT image_path FROM photos WHERE id = ?";
+  db.get(sqlFind, [id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!row) {
+      return res.status(404).json({ error: "Foto não encontrada no DB." });
+    }
+
+    const imagePath = row.image_path;
+
+    const fullPath = path.join(__dirname, UPLOADS_DIR, imagePath);
+    
+    fs.unlink(fullPath, (unlinkErr) => {
+      if (unlinkErr) {
+        console.error("Erro ao deletar arquivo:", unlinkErr.message);
+      }
+
+      const sqlDelete = "DELETE FROM photos WHERE id = ?";
+      db.run(sqlDelete, [id], function(dbErr) {
+        if (dbErr) {
+          return res.status(500).json({ error: dbErr.message });
+        }
+        res.status(200).json({ message: "Foto deletada com sucesso" });
+      });
+    });
+  });
+});
+
 app.get('/', (req, res) => {
     res.send('Servidor funcionando!');
 });
