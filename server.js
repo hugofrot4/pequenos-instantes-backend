@@ -32,13 +32,10 @@ const db = new sqlite3.Database(DB_FILE, (err) => {
 });
 
 app.use(cors());
-
 app.use(express.json());
-
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR);
 }
-
 app.use('/uploads', express.static(path.join(__dirname, UPLOADS_DIR)));
 
 const storage = multer.diskStorage({
@@ -50,8 +47,46 @@ const storage = multer.diskStorage({
         cb(null, file.fieldname + '-' + uniqueSuffix);
     }
 });
-
 const upload = multer({storage: storage});
+
+app.get('/api/photos', (req, res) => {
+    const sql = "SELECT * FROM photos ORDER BY created_at DESC";
+
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+
+        res.json({ photos: rows });
+    });
+});
+
+app.post('/api/upload', upload.single('image'), (req, res) => {
+    const { description } = req.body;
+
+    if (!req.file) {
+        return res.status(400).json({ error: "Nenhum arquivo de imagem enviado."});
+    }
+
+    const image_path = req.file.filename;
+
+    const sql = `INSERT INTO photos (description, image_path) VALUES (?, ?)`;
+    const params = [description, image_path];
+
+    db.run(sql, params, function (err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+
+        res.status(201).json({
+            id: this.lastID,
+            description: description,
+            image_path: image_path,
+        });
+    });
+});
 
 app.get('/', (req, res) => {
     res.send('Servidor funcionando!');
