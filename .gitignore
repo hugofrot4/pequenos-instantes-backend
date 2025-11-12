@@ -1,0 +1,16 @@
+# Dependências do Node.js
+/node_modules
+
+# Arquivo do Banco de Dados (SQLite)
+/database.db
+
+# Pasta de Uploads
+/uploads
+
+# Arquivos de Ambiente (para senhas ou segredos futuros)
+.env
+
+# Logs e arquivos do S.O.
+npm-debug.log
+.DS_Store
+Thumbs.db
